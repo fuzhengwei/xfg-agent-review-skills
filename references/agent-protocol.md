@@ -39,3 +39,5 @@ AGENT_REVIEW_REQUEST
 ```
 
 The runner does not call the provider itself. The wrapper decides whether to use OpenAI, Anthropic, Kimi, GLM, DeepSeek, another OpenAI-compatible endpoint, or a local model. If no model config is supplied, keep the wrapper's existing default.
+
+The optional reviewer command receives a JSON object from stdin. In addition to screenshots, it includes `workspace`, `workspace_files`, `agent_stdout`, `agent_stderr`, and `checks`, so it can continue reviewing artifacts and conversation quality when screenshots are unavailable.

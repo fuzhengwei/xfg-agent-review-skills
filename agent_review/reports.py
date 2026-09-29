@@ -26,6 +26,7 @@ def render_readiness_markdown(report: dict[str, Any]) -> str:
         "",
         f"- Agent: `{report['agent_command']}`",
         f"- Model/channel: `{model_label}`",
+        f"- Evidence mode: `{report.get('evidence_mode', 'workspace-only')}`",
         f"- Result: **{summary['passed']}/{summary['tasks']} passed ({summary['success_rate']:.1%})**",
         f"- Overall score: **{scoring['overall_score']}/100 — {level.upper()}**",
         f"- Started: {report['started_at']}",
@@ -258,6 +259,7 @@ def render_readiness_html(report: dict[str, Any]) -> str:
       <div class="meta">
         <div><div class="small">Agent</div><div>{_esc(report['agent_command'])}</div></div>
         <div><div class="small">Model / channel</div><div>{_esc(model_label)}</div></div>
+        <div><div class="small">Evidence mode</div><div>{_esc(report.get('evidence_mode', 'workspace-only'))}</div></div>
         <div><div class="small">Started</div><div>{_esc(report['started_at'])}</div></div>
         <div><div class="small">Finished</div><div>{_esc(report['finished_at'])}</div></div>
       </div>

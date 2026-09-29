@@ -240,6 +240,15 @@ macOS 可以用 `screencapture -x {output}`；Linux 可以用 `gnome-screenshot 
 
 截图和复审结论会进入 JSON/HTML 报告。readiness 分数仍以确定性 validator 为准；视觉复审用于解释 UI 和对话体验问题，不自动改变通过率。
 
+如果截图不可用，测评不会中断。runner 会继续使用其他证据：
+
+- Agent stdout/stderr 和对话 transcript；
+- workspace 内生成的文件和中间产物；
+- deterministic validator 结果；
+- 测试、构建、命令退出码和错误日志。
+
+这时 `evidence_mode` 会是 `workspace-only`。`--review-command` 可以在没有截图的情况下继续分析对话质量、文件产物、日志和代码行为。
+
 ## 怎么知道结果可靠
 
 可靠性来自可复核证据，不是来自一段总结：
@@ -247,6 +256,7 @@ macOS 可以用 `screencapture -x {output}`；Linux 可以用 `gnome-screenshot 
 - **任务隔离**：每个任务有独立 workspace，避免状态污染。
 - **确定性校验**：文件、命令、退出码和 schema 检查，而不是只看模型自述。
 - **原始证据**：报告保存 validator 明细和 Agent stdout/stderr，可回放失败原因。
+- **多模态证据降级**：截图失败时继续用 transcript、workspace 文件、日志和 validator 结果评估，不会中断测评。
 - **官方基准优先**：外部能力声明必须来自官方 harness 和官方 score 文件。
 - **配置可追溯**：记录 runner commit、suite、agent command、model profile、timeout 和时间戳。
 - **安全硬门槛**：安全任务失败时，综合等级强制为 `not-ready`。

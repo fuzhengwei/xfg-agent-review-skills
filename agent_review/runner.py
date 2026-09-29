@@ -40,6 +40,14 @@ def write_setup_files(workspace: Path, files: dict[str, str]) -> None:
         destination.write_text(content, encoding="utf-8")
 
 
+def _workspace_file_manifest(workspace: Path) -> list[str]:
+    return sorted(
+        str(path.relative_to(workspace))
+        for path in workspace.rglob("*")
+        if path.is_file() and not path.is_symlink()
+    )
+
+
 def run_readiness(
     agent_command: str,
     suite_path: Path = ROOT / "suites" / "readiness.json",
@@ -107,6 +115,9 @@ def run_readiness(
             record["checks"] = []
         record["finished_at"] = utc_now()
         record["duration_ms"] = round((time.perf_counter() - task_started) * 1000, 1)
+        record["workspace_files"] = _workspace_file_manifest(task_workspace)
+        record["evidence_mode"] = "workspace-only"
+        record["screenshots"] = []
 
         if screenshot_argv:
             evidence_dir = task_workspace / "evidence"
@@ -130,6 +141,7 @@ def run_readiness(
                 )
                 if capture_result.returncode == 0 and screenshot_path.is_file():
                     record["screenshots"] = [str(screenshot_path)]
+                    record["evidence_mode"] = "screenshot+workspace"
                     record["screenshot_capture"] = {
                         "exit_code": 0,
                         "duration_ms": round((time.perf_counter() - screenshot_started) * 1000, 1),
@@ -145,13 +157,15 @@ def run_readiness(
                 record["screenshots"] = []
                 record["screenshot_capture"] = {"exit_code": None, "error": str(exc)}
 
-        if review_argv and record.get("screenshots"):
+        if review_argv:
             review_started = time.perf_counter()
             review_request = {
                 "task_id": task_id,
                 "capability": record["capability"],
                 "prompt": task["prompt"],
+                "workspace": str(task_workspace),
                 "screenshots": record["screenshots"],
+                "workspace_files": record["workspace_files"],
                 "agent_stdout": record.get("agent_protocol", {}).get("stdout", ""),
                 "agent_stderr": record.get("agent_protocol", {}).get("stderr", ""),
                 "checks": record.get("checks", []),
@@ -239,6 +253,9 @@ def run_readiness(
         "finished_at": utc_now(),
         "agent_command": agent_command,
         "model_profile": model_profile,
+        "evidence_mode": "screenshot+workspace" if any(task.get("screenshots") for task in records) else "workspace-only",
+        "screenshot_command": screenshot_command,
+        "review_command": review_command,
         "suite": str(suite_path),
         "timeout_seconds_per_task": effective_timeout,
         "summary": {
