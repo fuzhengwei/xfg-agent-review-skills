@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import html
+import base64
+import mimetypes
 from pathlib import Path
 from typing import Any
 
@@ -59,6 +61,10 @@ def render_readiness_markdown(report: dict[str, Any]) -> str:
             f"| {_cell(task['task_id'])} | {_cell(task['capability'])} | "
             f"{_cell(task['status'].upper())} | {_cell(failure)} ({task.get('duration_ms', 0)} ms) |"
         )
+        if task.get("screenshots"):
+            lines.append(f"  - Screenshot: `{task['screenshots'][0]}`")
+        if task.get("visual_review"):
+            lines.append("  - Visual/conversation review attached in JSON report")
     lines.extend(
         [
             "",
@@ -106,12 +112,30 @@ def _esc(value: Any) -> str:
 def _task_detail(task: dict[str, Any]) -> str:
     protocol = task.get("agent_protocol") or {}
     checks = task.get("checks") or []
+    screenshot_parts: list[str] = []
+    for screenshot in task.get("screenshots", []):
+        screenshot_path = Path(screenshot)
+        if screenshot_path.is_file():
+            media_type = mimetypes.guess_type(screenshot_path)[0] or "image/png"
+            encoded = base64.b64encode(screenshot_path.read_bytes()).decode("ascii")
+            screenshot_parts.append(
+                f"<img class='screenshot' src='data:{media_type};base64,{encoded}' alt='Task screenshot'>"
+            )
+    visual_review = task.get("visual_review") or {}
     rows = [
         "<div class='task-detail'>",
         f"<div><strong>Exit code:</strong> {_esc(task.get('agent_exit_code'))}</div>",
         f"<div><strong>Duration:</strong> {_esc(task.get('duration_ms', 0))} ms</div>",
         "<details><summary>Checks</summary><pre>" + _esc(json.dumps(checks, indent=2, ensure_ascii=False)) + "</pre></details>",
     ]
+    if screenshot_parts:
+        rows.append("<div class='screenshots'>" + "".join(screenshot_parts) + "</div>")
+    if visual_review:
+        rows.append(
+            "<details open><summary>Visual / conversation review</summary><pre>"
+            + _esc(json.dumps(visual_review, indent=2, ensure_ascii=False))
+            + "</pre></details>"
+        )
     if protocol.get("stdout"):
         rows.append(
             "<details><summary>Agent stdout</summary><pre>"
@@ -220,6 +244,8 @@ def render_readiness_html(report: dict[str, Any]) -> str:
     ul {{ padding-left:20px; }}
     li {{ margin-bottom:10px; }}
     .muted {{ color:var(--muted); }}
+    .screenshots {{ display:flex; gap:10px; margin:10px 0; overflow:auto; }}
+    .screenshot {{ max-width:420px; max-height:240px; border:1px solid var(--border); border-radius:6px; }}
     footer {{ margin-top:28px; color:var(--muted); font-size:12px; }}
   </style>
 </head>

@@ -196,6 +196,50 @@ wrapper 可以读取这些环境变量：
 5. **生成报告**：输出能力维度分、综合分、失败原因、耗时和优化计划。
 6. **必要时重复**：随机性 Agent 至少跑 2 个 seed，并报告均值、标准差和 `pass@1`。
 
+### 屏幕截图与视觉复审
+
+如果需要检查真实 UI、布局问题、对话界面或运行状态，可以给 runner 提供两个可选命令：
+
+1. `--screenshot-command`：任务执行后截屏。
+2. `--review-command`：读取任务证据和截图，返回 JSON 复审结论。
+
+示例：
+
+```bash
+python3 scripts/agent_review.py run \
+  --agent-command '/absolute/path/to/desktop-agent-wrapper.py' \
+  --screenshot-command 'screencapture -x {output}' \
+  --review-command 'python3 /absolute/path/to/visual-reviewer.py' \
+  --output runs/desktop-ui-review.json \
+  --html
+```
+
+截图命令支持这些占位符：
+
+- `{output}`：截图保存路径；
+- `{workspace}`：任务独立工作区；
+- `{task_id}`：任务 ID。
+
+macOS 可以用 `screencapture -x {output}`；Linux 可以用 `gnome-screenshot -f {output}` 或 `import -window root {output}`。也可以写一个应用专属截图脚本，例如截取指定窗口或浏览器页面。
+
+复审命令从 stdin 收到一个 JSON 对象，包含 `task_id`、`capability`、`prompt`、`screenshots`、`agent_stdout`、`agent_stderr` 和 `checks`。它应向 stdout 输出一个 JSON object，例如：
+
+```json
+{
+  "summary": "The save button is below the fold and the dialog lacks a visible close control.",
+  "issues": [
+    {"area": "layout", "severity": "medium", "detail": "Primary action is clipped."},
+    {"area": "conversation", "severity": "low", "detail": "Assistant response is repeated after retry."}
+  ],
+  "recommendations": [
+    "Move the primary action into the visible dialog area.",
+    "Deduplicate the assistant response after a retry."
+  ]
+}
+```
+
+截图和复审结论会进入 JSON/HTML 报告。readiness 分数仍以确定性 validator 为准；视觉复审用于解释 UI 和对话体验问题，不自动改变通过率。
+
 ## 怎么知道结果可靠
 
 可靠性来自可复核证据，不是来自一段总结：

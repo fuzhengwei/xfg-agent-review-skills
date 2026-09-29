@@ -41,6 +41,8 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--timeout", type=int, help="Override per-task timeout in seconds")
     run_parser.add_argument("--model-config", help="Optional JSON file with model/channel profiles")
     run_parser.add_argument("--profile", help="Profile id inside --model-config")
+    run_parser.add_argument("--screenshot-command", help="Optional screen capture command; supports {output}, {workspace}, {task_id}")
+    run_parser.add_argument("--review-command", help="Optional JSON stdin/stdout reviewer command for screenshots, UI, and transcripts")
 
     doctor_parser = subparsers.add_parser("doctor", help="Check official benchmark prerequisites")
     doctor_parser.add_argument("--output", default="benchmark-doctor.json", help="JSON output path")
@@ -76,6 +78,8 @@ def main(argv: list[str] | None = None) -> int:
                 timeout_seconds=args.timeout,
                 model_config_path=Path(args.model_config) if args.model_config else None,
                 model_profile_id=args.profile,
+                screenshot_command=args.screenshot_command,
+                review_command=args.review_command,
             )
             if args.markdown:
                 markdown_path = output.with_suffix(".md")

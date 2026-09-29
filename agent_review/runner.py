@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import shlex
 import shutil
+import subprocess
 import time
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -45,6 +47,8 @@ def run_readiness(
     timeout_seconds: int | None = None,
     model_config_path: Path | None = None,
     model_profile_id: str | None = None,
+    screenshot_command: str | None = None,
+    review_command: str | None = None,
 ) -> dict[str, Any]:
     model_profile = resolve_model_profile(model_config_path, model_profile_id)
     suite = load_json(suite_path)
@@ -58,6 +62,8 @@ def run_readiness(
     output_path = output_path or Path.cwd() / "agent-review-report.json"
     artifacts = output_path.parent / f"{output_path.stem}-artifacts"
     artifacts.mkdir(parents=True, exist_ok=True)
+    screenshot_argv = shlex.split(screenshot_command) if screenshot_command else None
+    review_argv = shlex.split(review_command) if review_command else None
 
     records: list[dict[str, Any]] = []
     started_at = utc_now()
@@ -101,6 +107,88 @@ def run_readiness(
             record["checks"] = []
         record["finished_at"] = utc_now()
         record["duration_ms"] = round((time.perf_counter() - task_started) * 1000, 1)
+
+        if screenshot_argv:
+            evidence_dir = task_workspace / "evidence"
+            evidence_dir.mkdir(parents=True, exist_ok=True)
+            screenshot_path = evidence_dir / "screenshot.png"
+            capture_command = [
+                part.replace("{output}", str(screenshot_path))
+                .replace("{workspace}", str(task_workspace))
+                .replace("{task_id}", task_id)
+                for part in screenshot_argv
+            ]
+            screenshot_started = time.perf_counter()
+            try:
+                capture_result = subprocess.run(
+                    capture_command,
+                    cwd=task_workspace,
+                    capture_output=True,
+                    text=True,
+                    timeout=min(30, effective_timeout),
+                    check=False,
+                )
+                if capture_result.returncode == 0 and screenshot_path.is_file():
+                    record["screenshots"] = [str(screenshot_path)]
+                    record["screenshot_capture"] = {
+                        "exit_code": 0,
+                        "duration_ms": round((time.perf_counter() - screenshot_started) * 1000, 1),
+                    }
+                else:
+                    record["screenshots"] = []
+                    record["screenshot_capture"] = {
+                        "exit_code": capture_result.returncode,
+                        "duration_ms": round((time.perf_counter() - screenshot_started) * 1000, 1),
+                        "error": (capture_result.stderr or capture_result.stdout or "screenshot file was not created")[:2000],
+                    }
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                record["screenshots"] = []
+                record["screenshot_capture"] = {"exit_code": None, "error": str(exc)}
+
+        if review_argv and record.get("screenshots"):
+            review_started = time.perf_counter()
+            review_request = {
+                "task_id": task_id,
+                "capability": record["capability"],
+                "prompt": task["prompt"],
+                "screenshots": record["screenshots"],
+                "agent_stdout": record.get("agent_protocol", {}).get("stdout", ""),
+                "agent_stderr": record.get("agent_protocol", {}).get("stderr", ""),
+                "checks": record.get("checks", []),
+            }
+            try:
+                review_result = subprocess.run(
+                    review_argv,
+                    input=json.dumps(review_request, ensure_ascii=False),
+                    text=True,
+                    cwd=task_workspace,
+                    capture_output=True,
+                    timeout=min(120, effective_timeout),
+                    check=False,
+                )
+                review_payload = None
+                if review_result.stdout.strip():
+                    try:
+                        decoded = json.loads(review_result.stdout)
+                        if not isinstance(decoded, dict):
+                            raise ValueError("review command stdout must be a JSON object")
+                        review_payload = decoded
+                    except json.JSONDecodeError as exc:
+                        raise ValueError(f"invalid review JSON: {exc}") from exc
+                record["visual_review"] = {
+                    "exit_code": review_result.returncode,
+                    "duration_ms": round((time.perf_counter() - review_started) * 1000, 1),
+                    "payload": review_payload,
+                    "stdout": review_result.stdout,
+                    "stderr": review_result.stderr,
+                }
+            except (OSError, subprocess.TimeoutExpired, ValueError) as exc:
+                record["visual_review"] = {
+                    "exit_code": None,
+                    "duration_ms": round((time.perf_counter() - review_started) * 1000, 1),
+                    "error": str(exc),
+                }
+
         records.append(record)
 
     passed_count = sum(record["status"] == "passed" for record in records)
