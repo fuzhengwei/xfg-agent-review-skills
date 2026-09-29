@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "benchmarks": [
+    {
+      "id": "swe-bench-verified",
+      "title": "SWE-bench Verified",
+      "capability": "software-engineering",
+      "source": "https://github.com/SWE-bench/SWE-bench",
+      "license": "MIT (harness); dataset terms in repository",
+      "prerequisites": ["python>=3.10", "docker", "swebench"],
+      "setup": [
+        "python -m pip install -U swebench",
+        "docker info"
+      ],
+      "adapter": "official-repository",
+      "metric": "percent_resolved",
+      "notes": "Run the official verified split and retain the official report.jsonl as evidence."
+    },
+    {
+      "id": "terminal-bench",
+      "title": "Terminal-Bench",
+      "capability": "terminal-and-devops",
+      "source": "https://github.com/terminal-bench/terminal-bench",
+      "license": "Apache-2.0",
+      "prerequisites": ["python>=3.10", "docker", "tb"],
+      "setup": [
+        "python -m pip install -U terminal-bench",
+        "docker info"
+      ],
+      "adapter": "official-repository",
+      "metric": "task_success_rate",
+      "notes": "Use the pinned task set and official result directory, not ad-hoc terminal screenshots."
+    },
+    {
+      "id": "bfcl-v3",
+      "title": "Berkeley Function Calling Leaderboard v3",
+      "capability": "tool-calling",
+      "source": "https://github.com/ShishirPatil/gorilla",
+      "license": "Apache-2.0; see BFCL dataset terms",
+      "prerequisites": ["python>=3.10", "bfcl"],
+      "setup": [
+        "python -m pip install -U bfcl",
+        "bfcl generate --help"
+      ],
+      "adapter": "official-repository",
+      "metric": "function_calling_accuracy",
+      "notes": "Evaluate generation and executable/tool-eval categories separately."
+    },
+    {
+      "id": "osworld",
+      "title": "OSWorld",
+      "capability": "desktop-and-computer-use",
+      "source": "https://github.com/xlang-ai/OSWorld",
+      "license": "Apache-2.0; dataset terms in repository",
+      "prerequisites": ["python>=3.10", "docker", "display-server"],
+      "setup": [
+        "git clone --depth 1 https://github.com/xlang-ai/OSWorld.git osworld",
+        "python -m pip install -r osworld/requirements.txt"
+      ],
+      "adapter": "official-repository",
+      "metric": "environment_success_rate",
+      "notes": "Run one desktop profile at a time and save VM state plus screenshots for auditability."
+    },
+    {
+      "id": "gaia",
+      "title": "GAIA",
+      "capability": "general-assistant",
+      "source": "https://huggingface.co/datasets/gaia-benchmark/GAIA",
+      "license": "Dataset terms controlled by Hugging Face",
+      "prerequisites": ["python>=3.10", "huggingface-cli", "network-access"],
+      "setup": [
+        "huggingface-cli download gaia-benchmark/GAIA --repo-type dataset --local-dir data/gaia"
+      ],
+      "adapter": "official-dataset",
+      "metric": "exact_match",
+      "notes": "Use official exact-match scoring; prohibit training-data access during the run."
+    },
+    {
+      "id": "theagentcompany",
+      "title": "TheAgentCompany",
+      "capability": "long-horizon-work",
+      "source": "https://github.com/TheAgentCompany/TheAgentCompany",
+      "license": "MIT; check repository for task data terms",
+      "prerequisites": ["python>=3.10", "docker", "compose"],
+      "setup": [
+        "git clone --depth 1 https://github.com/TheAgentCompany/TheAgentCompany.git the-agent-company",
+        "docker compose up -d"
+      ],
+      "adapter": "official-repository",
+      "metric": "partial_credit_and_success",
+      "notes": "Run a fixed scenario profile and preserve transcripts, tool traces, and scoring state."
+    }
+  ]
+}

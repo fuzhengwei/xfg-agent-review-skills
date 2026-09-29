@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+agent-review-report.json
+agent-review-report.md
+agent-review-report-artifacts/
+benchmark-doctor.json
+official-benchmark-report.json
+.venv*/
+runs/
