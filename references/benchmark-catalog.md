@@ -12,6 +12,12 @@ Use official datasets and harnesses. Do not paraphrase tasks or create private v
 | OSWorld | Desktop / computer use | Can the agent operate real desktop apps, browser, and OS settings? | <https://github.com/xlang-ai/OSWorld> | task state/screenshot + score |
 | GAIA | General assistant | Can the agent search, process files, reason, and return a precise answer? | <https://huggingface.co/datasets/gaia-benchmark/GAIA> | official exact-match output |
 | TheAgentCompany | Long-horizon work | Can the agent complete real company workflows across tools and messages? | <https://github.com/TheAgentCompany/TheAgentCompany> | official scenario score |
+| τ-bench | Tool use and policy | Can the agent follow task policy across multiple tool turns? | <https://github.com/sierra-research/tau-bench> | official task result |
+| WebArena | Web agent | Can the agent operate real self-hosted websites? | <https://github.com/web-arena-x/webarena> | action trace and final state |
+| AndroidWorld | Mobile agent | Can the agent control Android applications reliably? | <https://github.com/google-research/android_world> | screenshots, UI hierarchy, score |
+| AgentBench | Multi-environment agent | Does performance hold outside one narrow environment? | <https://github.com/THUDM/AgentBench> | per-environment score |
+| MLE-bench | ML engineering | Can the agent run data/training/evaluation loops? | <https://github.com/openai/mle-bench> | official submission result |
+| AgentDojo | Agent security | Can the agent resist prompt injection and tool misuse? | <https://github.com/ethz-spylab/agentdojo> | attack success rate |
 
 ## Important external benchmarks
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -39,7 +40,7 @@ def check_prerequisite(prerequisite: str) -> tuple[bool, str]:
                 ["python3", "--version"], capture_output=True, text=True, check=True
             )
             version = completed.stdout.strip().split()[-1]
-            required_minor = int(prerequisite.split(">=python")[1].split(".")[1])
+            required_minor = int(prerequisite.split("python>=")[1].split(".")[1])
             current_minor = int(version.split(".")[1])
             return current_minor >= required_minor, version
         except Exception as exc:
@@ -50,6 +51,12 @@ def check_prerequisite(prerequisite: str) -> tuple[bool, str]:
         return True, "must be provided by the OSWorld environment"
     if prerequisite == "compose":
         return command_available("docker-compose"), "docker-compose"
+    if prerequisite == "browser":
+        return any(command_available(name) for name in ["google-chrome", "chromium", "firefox"]), "chrome/chromium/firefox"
+    if prerequisite == "android-emulator":
+        return command_available("emulator"), "android emulator"
+    if prerequisite == "kaggle-credentials":
+        return bool(os.getenv("KAGGLE_USERNAME") and os.getenv("KAGGLE_KEY")) or command_available("kaggle"), "KAGGLE_USERNAME/KAGGLE_KEY or kaggle CLI"
     if prerequisite == "huggingface-cli":
         return command_available("huggingface-cli"), "huggingface-cli"
     if prerequisite == "docker":

@@ -89,6 +89,96 @@
       "adapter": "official-repository",
       "metric": "partial_credit_and_success",
       "notes": "Run a fixed scenario profile and preserve transcripts, tool traces, and scoring state."
+    },
+    {
+      "id": "tau-bench",
+      "title": "τ-bench",
+      "capability": "tool-use-and-policy",
+      "source": "https://github.com/sierra-research/tau-bench",
+      "license": "MIT; dataset terms in repository",
+      "prerequisites": ["python>=3.10", "network-access"],
+      "setup": [
+        "git clone --depth 1 https://github.com/sierra-research/tau-bench.git tau-bench",
+        "python -m pip install -r tau-bench/requirements.txt"
+      ],
+      "adapter": "official-repository",
+      "metric": "task_success_rate",
+      "notes": "Evaluate multi-turn tool use and policy adherence separately."
+    },
+    {
+      "id": "webarena",
+      "title": "WebArena",
+      "capability": "web-agent",
+      "source": "https://github.com/web-arena-x/webarena",
+      "license": "See repository; dataset terms controlled by authors",
+      "prerequisites": ["python>=3.10", "docker", "browser"],
+      "setup": [
+        "git clone --depth 1 https://github.com/web-arena-x/webarena.git webarena",
+        "python -m pip install -r webarena/requirements.txt"
+      ],
+      "adapter": "official-repository",
+      "metric": "website_success_rate",
+      "notes": "Use self-hosted websites; preserve DOM/action traces and final state."
+    },
+    {
+      "id": "androidworld",
+      "title": "AndroidWorld",
+      "capability": "mobile-agent",
+      "source": "https://github.com/google-research/android_world",
+      "license": "Apache-2.0",
+      "prerequisites": ["python>=3.10", "android-emulator"],
+      "setup": [
+        "git clone --depth 1 https://github.com/google-research/android_world.git android-world",
+        "python -m pip install -r android-world/requirements.txt"
+      ],
+      "adapter": "official-repository",
+      "metric": "task_success_rate",
+      "notes": "Use a fixed emulator profile and preserve screenshots plus UI hierarchy."
+    },
+    {
+      "id": "agentbench",
+      "title": "AgentBench",
+      "capability": "multi-environment-agent",
+      "source": "https://github.com/THUDM/AgentBench",
+      "license": "MIT; check repository for task data terms",
+      "prerequisites": ["python>=3.10", "docker"],
+      "setup": [
+        "git clone --depth 1 https://github.com/THUDM/AgentBench.git agentbench",
+        "python -m pip install -r agentbench/requirements.txt"
+      ],
+      "adapter": "official-repository",
+      "metric": "aggregate_success_rate",
+      "notes": "Report each environment separately before aggregating."
+    },
+    {
+      "id": "mle-bench",
+      "title": "MLE-bench",
+      "capability": "machine-learning-engineering",
+      "source": "https://github.com/openai/mle-bench",
+      "license": "MIT; Kaggle data has separate terms",
+      "prerequisites": ["python>=3.10", "network-access", "kaggle-credentials"],
+      "setup": [
+        "git clone --depth 1 https://github.com/openai/mle-bench.git mle-bench",
+        "python -m pip install -r mle-bench/requirements.txt"
+      ],
+      "adapter": "official-repository",
+      "metric": "medal_rate",
+      "notes": "Use the official competition profile and submission evaluator."
+    },
+    {
+      "id": "agentdojo",
+      "title": "AgentDojo",
+      "capability": "agent-security",
+      "source": "https://github.com/ethz-spylab/agentdojo",
+      "license": "MIT; dataset terms in repository",
+      "prerequisites": ["python>=3.10"],
+      "setup": [
+        "git clone --depth 1 https://github.com/ethz-spylab/agentdojo.git agentdojo",
+        "python -m pip install -r agentdojo/requirements.txt"
+      ],
+      "adapter": "official-repository",
+      "metric": "attack_success_rate",
+      "notes": "Use for prompt-injection and tool-misuse resistance; report both benign and attacked utility."
     }
   ]
 }

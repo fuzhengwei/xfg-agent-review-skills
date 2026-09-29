@@ -1,6 +1,20 @@
 # xfg-agent-review-skills
 
-一套可复现、可审计的 Agent 能力测评技能。它把“模型答得好不好”和“Agent 能不能真的完成任务”分开，用确定性校验、任务工作区、工具轨迹和官方基准证据来评估能力。
+一个面向 Agent 的可审计测评工具。它不看聊天是否流畅，只回答四个问题：
+
+1. 任务是否完成？
+2. 失败是否能定位？
+3. 证据是否可复核？
+4. 下一步应该优化什么？
+
+适用对象：
+
+- CLI / coding agent；
+- tool、SDK、MCP agent；
+- browser、desktop、mobile agent；
+- 固定业务流程中的 company workflow agent。
+
+当前内置 suite 不是能力满分证明，而是一个可重复的回归基线。对外声称能力前，必须补充对应官方基准。
 
 ## 能测什么
 
@@ -18,6 +32,32 @@
 | 安全边界 | 是否拒绝越权和破坏性操作 | guard validator、trace |
 
 本技能包含一个本地 **Readiness Suite**，可以直接执行；同时为 SWE-bench Verified、Terminal-Bench、BFCL v3、OSWorld、GAIA、TheAgentCompany 提供统一的元数据、环境检查和运行手册。外部基准仍必须使用官方数据集、官方 harness 和官方评分文件。
+
+## 覆盖缺口
+
+内置 readiness suite 只覆盖高频行为点。发布或选型时，还需要按场景补齐：
+
+| 缺口 | 为什么要测 | 建议补充方式 |
+|---|---|---|
+| 长期记忆 | 跨会话、跨任务的状态保持能力 | LOCOMO/LongMemEval 或自定义跨会话任务 |
+| 对抗鲁棒性 | 是否会被注入、误导或滥用工具 | AgentDojo、InjecAgent 或 adversarial prompt set |
+| 多 Agent 协作 | 交接、审批、权限隔离是否正确 | 自定义 SOP 场景 + role handoff validator |
+| 领域正确性 | 通用 benchmark 无法证明业务正确 | 把公司 SOP、字段规则、边界条件写成 validator |
+| 成本与延迟 | 同样成功率下的运行成本 | token、tool call、wall time telemetry |
+| 人工验收 | 自动校验无法覆盖主观质量 | 双人评审、pairwise comparison、上线灰度 |
+
+市面常见补充基准：
+
+| 基准 | 适用点 | 来源 |
+|---|---|---|
+| [τ-bench](https://github.com/sierra-research/tau-bench) | 多轮工具调用、策略遵守 | <https://github.com/sierra-research/tau-bench> |
+| [WebArena](https://github.com/web-arena-x/webarena) | 真实自托管 Web 操作 | <https://github.com/web-arena-x/webarena> |
+| [AndroidWorld](https://github.com/google-research/android_world) | Android 应用操作 | <https://github.com/google-research/android_world> |
+| [AgentBench](https://github.com/THUDM/AgentBench) | 多环境 Agent 控制 | <https://github.com/THUDM/AgentBench> |
+| [MLE-bench](https://github.com/openai/mle-bench) | 机器学习工程 | <https://github.com/openai/mle-bench> |
+| [AgentDojo](https://github.com/ethz-spylab/agentdojo) | Prompt injection、tool misuse | <https://github.com/ethz-spylab/agentdojo> |
+
+这些基准已经进入 `registry/benchmarks.json`，可用 `doctor` 检查环境。
 
 ## 快速开始
 
@@ -48,6 +88,28 @@ python3 scripts/agent_review.py run \
 ```
 
 这个示例只证明 runner 和评分器可用，不是真实 Agent 能力。
+
+## 测评流程
+
+```mermaid
+flowchart LR
+  A[Define scope] --> B[Pin config]
+  B --> C[Run readiness suite]
+  C --> D{All tasks pass?}
+  D -- No --> E[Triage failure]
+  E --> F[Add regression validator]
+  F --> C
+  D -- Yes --> G[Select official benchmark]
+  G --> H[Run official harness]
+  H --> I[Collect raw evidence]
+  I --> J[Score capabilities]
+  J --> K[Write report + optimization plan]
+  K --> L{Ready to release?}
+  L -- No --> E
+  L -- Yes --> M[Monitor live]
+```
+
+流程中的安全任务是硬门槛：只要 `safety-boundary` 失败，readiness level 直接判为 `not-ready`。
 
 ## Agent 调用协议
 
@@ -113,6 +175,8 @@ python3 scripts/agent_review.py run \
 - `both`：同时执行文件和命令校验。
 
 ## 官方基准
+
+Registry 目前登记 12 个外部基准。前 6 个是最常用的起始集；扩展集覆盖工具策略、Web、移动端、多环境、ML 工程和安全评测。
 
 ```bash
 python3 scripts/agent_review.py list

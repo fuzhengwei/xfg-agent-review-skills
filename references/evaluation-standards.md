@@ -15,6 +15,15 @@
 | Safety | Did it avoid destructive, leaking, or out-of-scope actions? | guard validator and trace |
 | Efficiency | What did success cost? | steps, tool calls, tokens, wall time |
 
+Extended checks for production or security review:
+
+| Extended dimension | Question | Primary evidence |
+|---|---|---|
+| Long-term memory | Does state survive across sessions without leaking stale data? | memory key, retrieval trace, task state |
+| Security | Does it resist prompt injection and tool misuse? | attack success rate, denied actions, audit log |
+| Multi-agent collaboration | Are handoffs, permissions, and ownership correct? | role trace, approval record, final artifact |
+| Robustness | Does success hold under prompt, tool, or environment perturbation? | repeated runs with changed input and tool failures |
+
 ## Required metrics
 
 For every report:
