@@ -132,6 +132,86 @@ flowchart LR
 5. prompt 不要从 shell 参数读取，避免转义和注入问题。
 6. 如果 Agent 需要调用 Codex、Claude、OpenAI SDK 或公司 Agent SDK，请写 wrapper，而不是直接把 prompt 拼进 shell。
 
+## 模型与渠道配置
+
+默认情况下不传 `--model-config`，Agent 会使用你 wrapper 里已经配置好的默认模型。这样不会改变现有运行方式。
+
+如果要比较 OpenAI、Kimi、GLM、DeepSeek、Anthropic 等不同渠道，可以提供 profile 文件。runner 不直接调用 LLM；它把模型元数据注入子进程环境，由你的 wrapper 负责请求：
+
+```json
+{
+  "version": 1,
+  "default_profile": "openai-compatible",
+  "profiles": [
+    {
+      "id": "openai-compatible",
+      "provider": "openai",
+      "model": "<model-id>",
+      "base_url": "https://api.openai.com/v1",
+      "api_key_env": "OPENAI_API_KEY",
+      "request": {"temperature": 0}
+    },
+    {
+      "id": "kimi",
+      "provider": "moonshot",
+      "model": "<model-id>",
+      "base_url": "https://api.moonshot.cn/v1",
+      "api_key_env": "MOONSHOT_API_KEY",
+      "request": {"temperature": 0}
+    }
+  ]
+}
+```
+
+运行指定 profile：
+
+```bash
+OPENAI_API_KEY=... python3 scripts/agent_review.py run \
+  --agent-command '/absolute/path/to/agent-wrapper.py' \
+  --model-config configs/model-profiles.example.json \
+  --profile openai-compatible \
+  --output runs/openai.json \
+  --markdown
+```
+
+wrapper 可以读取这些环境变量：
+
+- `AGENT_REVIEW_PROFILE_ID`
+- `AGENT_REVIEW_PROVIDER`
+- `AGENT_REVIEW_MODEL`
+- `AGENT_REVIEW_BASE_URL`
+- `AGENT_REVIEW_REQUEST`
+
+报告只记录 `provider`、`model`、`base_url`、`request` 和 `api_key_env` 名称，不记录 API key。比较不同模型时，每个 profile 单独跑一次，并使用相同 suite、timeout 和工作区隔离规则。
+
+## 怎么测
+
+1. **固定运行条件**：确定 agent wrapper、模型 profile、suite、timeout、硬件和网络边界。
+2. **跑本地 readiness suite**：每个任务进入独立 workspace，由确定性 validator 检查最终产物。
+3. **跑官方基准**：readiness 通过后，再跑 SWE-bench、Terminal-Bench、BFCL、OSWorld、GAIA 等对应场景。
+4. **保留证据**：任务工作区、stdout/stderr、validator 结果、官方 harness 输出都要落盘。
+5. **生成报告**：输出能力维度分、综合分、失败原因、耗时和优化计划。
+6. **必要时重复**：随机性 Agent 至少跑 2 个 seed，并报告均值、标准差和 `pass@1`。
+
+## 怎么知道结果可靠
+
+可靠性来自可复核证据，不是来自一段总结：
+
+- **任务隔离**：每个任务有独立 workspace，避免状态污染。
+- **确定性校验**：文件、命令、退出码和 schema 检查，而不是只看模型自述。
+- **原始证据**：报告保存 validator 明细和 Agent stdout/stderr，可回放失败原因。
+- **官方基准优先**：外部能力声明必须来自官方 harness 和官方 score 文件。
+- **配置可追溯**：记录 runner commit、suite、agent command、model profile、timeout 和时间戳。
+- **安全硬门槛**：安全任务失败时，综合等级强制为 `not-ready`。
+- **不做无证据宣称**：没有跑官方 benchmark 时，不能声称“通过 SWE-bench”或“生产可用”。
+
+仍然不能消除的限制：
+
+- readiness suite 只覆盖 10 个高频行为点，不能代表全部业务能力；
+- GUI 和外部环境测试受显示服务、网络、浏览器版本影响；
+- 对抗安全、长期记忆、多 Agent 协作需要额外专用基准；
+- 模型输出有随机性时，单次运行不能作为唯一结论。
+
 ## Readiness Suite
 
 `suites/readiness.json` 内置 10 个确定性任务：

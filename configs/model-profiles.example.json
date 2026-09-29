@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "default_profile": "openai-compatible",
+  "profiles": [
+    {
+      "id": "openai-compatible",
+      "provider": "openai",
+      "model": "<model-id>",
+      "base_url": "https://api.openai.com/v1",
+      "api_key_env": "OPENAI_API_KEY",
+      "request": {
+        "temperature": 0
+      }
+    },
+    {
+      "id": "moonshot",
+      "provider": "kimi",
+      "model": "<model-id>",
+      "base_url": "https://api.moonshot.cn/v1",
+      "api_key_env": "MOONSHOT_API_KEY",
+      "request": {
+        "temperature": 0
+      }
+    },
+    {
+      "id": "zhipu",
+      "provider": "glm",
+      "model": "<model-id>",
+      "base_url": "https://open.bigmodel.cn/api/paas/v4",
+      "api_key_env": "ZHIPUAI_API_KEY",
+      "request": {
+        "temperature": 0
+      }
+    }
+  ]
+}

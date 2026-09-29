@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shlex
 import subprocess
 from dataclasses import dataclass
@@ -27,6 +28,7 @@ def invoke_agent(
     prompt: str,
     workspace: Path,
     timeout_seconds: int,
+    model_profile: dict[str, Any] | None = None,
 ) -> AgentResult:
     """Invoke an agent using the xAgent JSON stdin/stdout protocol."""
 
@@ -35,6 +37,19 @@ def invoke_agent(
         "prompt": prompt,
         "workspace": str(workspace.resolve()),
     }
+    environment = os.environ.copy()
+    if model_profile:
+        request_data = model_profile.get("request", {})
+        environment.update(
+            {
+                "AGENT_REVIEW_PROFILE_ID": model_profile["id"],
+                "AGENT_REVIEW_PROVIDER": model_profile["provider"],
+                "AGENT_REVIEW_MODEL": model_profile["model"],
+                "AGENT_REVIEW_REQUEST": json.dumps(request_data, ensure_ascii=False, sort_keys=True),
+            }
+        )
+        if model_profile.get("base_url"):
+            environment["AGENT_REVIEW_BASE_URL"] = model_profile["base_url"]
     try:
         completed = subprocess.run(
             shlex.split(command),
@@ -44,6 +59,7 @@ def invoke_agent(
             capture_output=True,
             timeout=timeout_seconds,
             check=False,
+            env=environment,
         )
     except FileNotFoundError as exc:
         raise AgentProtocolError(f"agent command not found: {command}") from exc

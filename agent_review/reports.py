@@ -16,10 +16,13 @@ def render_readiness_markdown(report: dict[str, Any]) -> str:
     summary = report["summary"]
     scoring = report["scoring"]
     level = scoring["readiness_level"]
+    model_profile = report.get("model_profile")
+    model_label = "agent default" if not model_profile else f"{model_profile.get('provider')}/{model_profile.get('model')}"
     lines = [
         "# Agent Review Readiness Report",
         "",
         f"- Agent: `{report['agent_command']}`",
+        f"- Model/channel: `{model_label}`",
         f"- Result: **{summary['passed']}/{summary['tasks']} passed ({summary['success_rate']:.1%})**",
         f"- Overall score: **{scoring['overall_score']}/100 — {level.upper()}**",
         f"- Started: {report['started_at']}",

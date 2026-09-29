@@ -38,6 +38,8 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--output", default="agent-review-report.json", help="JSON output path")
     run_parser.add_argument("--markdown", action="store_true", help="Also write a sibling Markdown report")
     run_parser.add_argument("--timeout", type=int, help="Override per-task timeout in seconds")
+    run_parser.add_argument("--model-config", help="Optional JSON file with model/channel profiles")
+    run_parser.add_argument("--profile", help="Profile id inside --model-config")
 
     doctor_parser = subparsers.add_parser("doctor", help="Check official benchmark prerequisites")
     doctor_parser.add_argument("--output", default="benchmark-doctor.json", help="JSON output path")
@@ -71,6 +73,8 @@ def main(argv: list[str] | None = None) -> int:
                 suite_path=suite_path,
                 output_path=output,
                 timeout_seconds=args.timeout,
+                model_config_path=Path(args.model_config) if args.model_config else None,
+                model_profile_id=args.profile,
             )
             if args.markdown:
                 markdown_path = output.with_suffix(".md")

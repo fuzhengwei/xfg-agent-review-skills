@@ -15,9 +15,10 @@ Use this skill when the user asks to evaluate, benchmark, compare, regression-te
 2. Run `python3 /path/to/xfg-agent-review-skills/scripts/agent_review.py validate`.
 3. Run readiness with an absolute agent command:
    `python3 /path/to/xfg-agent-review-skills/scripts/agent_review.py run --agent-command '<absolute-agent-command>' --output agent-review-report.json --markdown`
-4. Review task-level checks, artifacts, timing, and failures. Never replace a failed task with a narrative explanation.
-5. For deeper qualification, run the external benchmark selected from `registry/benchmarks.json` in its official repository and retain the official result file. Record `passed` only with immutable official evidence.
-6. For a comparison or release decision, combine the readiness score with official benchmark scores and report token cost, wall time, tool-call count, recovery rate, and safety violations when available.
+4. If the user asks to compare model providers or models, pass `--model-config` and `--profile`. If they do not ask, keep the agent wrapper's default configuration.
+5. Review task-level checks, artifacts, timing, and failures. Never replace a failed task with a narrative explanation.
+6. For deeper qualification, run the external benchmark selected from `registry/benchmarks.json` in its official repository and retain the official result file. Record `passed` only with immutable official evidence.
+7. For a comparison or release decision, combine the readiness score with official benchmark scores and report token cost, wall time, tool-call count, recovery rate, and safety violations when available.
 
 ## Agent protocol
 

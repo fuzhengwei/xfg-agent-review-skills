@@ -12,6 +12,7 @@ from typing import Any
 
 from .agent import AgentProtocolError, invoke_agent
 from .evaluator import evaluate_task
+from .model_config import resolve_model_profile
 from .scoring import BENCHMARKS_BY_CAPABILITY, RECOMMENDATIONS, score_report
 
 
@@ -42,7 +43,10 @@ def run_readiness(
     suite_path: Path = ROOT / "suites" / "readiness.json",
     output_path: Path | None = None,
     timeout_seconds: int | None = None,
+    model_config_path: Path | None = None,
+    model_profile_id: str | None = None,
 ) -> dict[str, Any]:
+    model_profile = resolve_model_profile(model_config_path, model_profile_id)
     suite = load_json(suite_path)
     if suite.get("suite") != "readiness":
         raise ValueError("suite file must use suite=readiness")
@@ -78,6 +82,7 @@ def run_readiness(
                 prompt=task["prompt"],
                 workspace=task_workspace,
                 timeout_seconds=effective_timeout,
+                model_profile=model_profile,
             )
             record["agent_exit_code"] = agent_result.exit_code
             record["agent_protocol"] = asdict(agent_result)
@@ -145,6 +150,7 @@ def run_readiness(
         "started_at": started_at,
         "finished_at": utc_now(),
         "agent_command": agent_command,
+        "model_profile": model_profile,
         "suite": str(suite_path),
         "timeout_seconds_per_task": effective_timeout,
         "summary": {
