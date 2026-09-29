@@ -11,15 +11,26 @@ Use this skill when the user asks to evaluate, benchmark, compare, regression-te
 
 ## Required workflow
 
-1. Confirm the target agent invocation and the capability to evaluate. If unspecified, run the full readiness suite first.
-2. Run `python3 /path/to/xfg-agent-review-skills/scripts/agent_review.py validate`.
-3. Run readiness with an absolute agent command:
+1. First analyze the request. Do not start a benchmark, run commands, create reports, or collect screenshots yet.
+2. Produce a short evaluation plan containing:
+   - objective;
+   - agent command or wrapper;
+   - model/channel configuration (default, or explicit profile);
+   - suite/tasks and official benchmarks to run;
+   - evidence to collect;
+   - pass/fail criteria;
+   - estimated runtime, cost, and risks;
+   - what will not be tested.
+3. Ask the user for explicit confirmation, for example: “确认执行后我再开始测评。”
+4. Wait for an affirmative confirmation such as “确认执行”, “开始”, or “批准”. If the user asks to change scope, update the plan and confirm again.
+5. After confirmation, run `python3 /path/to/xfg-agent-review-skills/scripts/agent_review.py validate`.
+6. Run readiness with an absolute agent command:
    `python3 /path/to/xfg-agent-review-skills/scripts/agent_review.py run --agent-command '<absolute-agent-command>' --output agent-review-report.json --markdown`
-4. If the user asks to compare model providers or models, pass `--model-config` and `--profile`. If they do not ask, keep the agent wrapper's default configuration.
-5. If the request involves real UI, screenshots, conversation quality, or runtime behavior, run with `--screenshot-command` and a JSON `--review-command` when available. If screenshot capture is unavailable or fails, continue with workspace files, transcript, logs, and deterministic validators; do not abort the evaluation solely because a screenshot is missing.
-6. Review task-level checks, artifacts, timing, and failures. Never replace a failed task with a narrative explanation.
-7. For deeper qualification, run the external benchmark selected from `registry/benchmarks.json` in its official repository and retain the official result file. Record `passed` only with immutable official evidence.
-8. For a comparison or release decision, combine the readiness score with official benchmark scores and report token cost, wall time, tool-call count, recovery rate, and safety violations when available.
+7. If the user asks to compare model providers or models, pass `--model-config` and `--profile`. If they do not ask, keep the agent wrapper's default configuration.
+8. If the request involves real UI, screenshots, conversation quality, or runtime behavior, run with `--screenshot-command` and a JSON `--review-command` when available. If screenshot capture is unavailable or fails, continue with workspace files, transcript, logs, and deterministic validators; do not abort the evaluation solely because a screenshot is missing.
+9. Review task-level checks, artifacts, timing, and failures. Never replace a failed task with a narrative explanation.
+10. For deeper qualification, run the external benchmark selected from `registry/benchmarks.json` in its official repository and retain the official result file. Record `passed` only with immutable official evidence.
+11. For a comparison or release decision, combine the readiness score with official benchmark scores and report token cost, wall time, tool-call count, recovery rate, and safety violations when available.
 
 ## Agent protocol
 
