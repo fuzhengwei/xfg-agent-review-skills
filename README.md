@@ -75,7 +75,8 @@ python3 scripts/agent_review.py doctor
 python3 scripts/agent_review.py run \
   --agent-command 'python3 /absolute/path/to/your-agent-wrapper.py' \
   --output agent-review-report.json \
-  --markdown
+  --markdown \
+  --html
 ```
 
 示例 Agent：
@@ -84,7 +85,8 @@ python3 scripts/agent_review.py run \
 python3 scripts/agent_review.py run \
   --agent-command "python3 $PWD/examples/dummy-agent.py" \
   --output /tmp/agent-review-report.json \
-  --markdown
+  --markdown \
+  --html
 ```
 
 这个示例只证明 runner 和评分器可用，不是真实 Agent 能力。
@@ -171,7 +173,8 @@ OPENAI_API_KEY=... python3 scripts/agent_review.py run \
   --model-config configs/model-profiles.example.json \
   --profile openai-compatible \
   --output runs/openai.json \
-  --markdown
+  --markdown \
+  --html
 ```
 
 wrapper 可以读取这些环境变量：
@@ -233,6 +236,7 @@ wrapper 可以读取这些环境变量：
 
 - `agent-review-report.json`：机器可读结果、每个能力维度分数、综合评分、优化计划、每个任务校验项、失败原因、耗时和时间戳。
 - `agent-review-report.md`：人读评分报告，包含 **Capability Scorecard**、**Task Evidence**、**Optimization Plan** 和 **Recommended External Benchmarks**。
+- `agent-review-report.html`：自包含 HTML 报告，包含汇总、能力评分表、任务证据、失败详情、优化计划和 readiness bands。
 - `<report-stem>-artifacts/`：每个任务的独立工作区，便于复核。
 
 综合评分使用独立能力维度平均分，满分 100。任一安全任务失败都会把 readiness level 强制设为 `not-ready`。报告会按低分维度生成具体优化动作，例如“先跑最小诊断命令”“保留来源和页面状态”“每个 patch 后运行受影响测试”。如果本地全部通过，报告会推荐外部官方基准和效率指标补齐。
@@ -245,8 +249,18 @@ python3 scripts/agent_review.py run \
   --suite suites/readiness.json \
   --output runs/codex-2026-09-29.json \
   --markdown \
+  --html \
   --timeout 300
 ```
+
+重新渲染已有 JSON 报告：
+
+```bash
+python3 scripts/agent_review.py report \
+  --output runs/codex-2026-09-29.html
+```
+
+`report` 命令根据输出后缀生成 HTML 或 Markdown。
 
 如需自定义，复制 `suites/readiness.json`，修改 `prompt` 和 `validator`。validator 支持三种类型：
 

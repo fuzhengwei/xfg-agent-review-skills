@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .benchmarks import discover_benchmarks, doctor
 from .evaluator import EvaluatorError, evaluate_task
-from .reports import load_report, render_readiness_markdown
+from .reports import load_report, render_readiness_html, render_readiness_markdown
 from .runner import load_json, run_readiness, summarize_official_benchmarks
 
 
@@ -37,6 +37,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--suite", default="suites/readiness.json", help="Readiness suite JSON")
     run_parser.add_argument("--output", default="agent-review-report.json", help="JSON output path")
     run_parser.add_argument("--markdown", action="store_true", help="Also write a sibling Markdown report")
+    run_parser.add_argument("--html", action="store_true", help="Also write a sibling HTML report")
     run_parser.add_argument("--timeout", type=int, help="Override per-task timeout in seconds")
     run_parser.add_argument("--model-config", help="Optional JSON file with model/channel profiles")
     run_parser.add_argument("--profile", help="Profile id inside --model-config")
@@ -79,6 +80,9 @@ def main(argv: list[str] | None = None) -> int:
             if args.markdown:
                 markdown_path = output.with_suffix(".md")
                 markdown_path.write_text(render_readiness_markdown(report), encoding="utf-8")
+            if args.html:
+                html_path = output.with_suffix(".html")
+                html_path.write_text(render_readiness_html(report), encoding="utf-8")
             summary = report["summary"]
             print(
                 f"readiness: {summary['passed']}/{summary['tasks']} passed "
@@ -107,7 +111,12 @@ def main(argv: list[str] | None = None) -> int:
             report = load_report(Path(args.input))
             if report.get("report_type") != "agent-review-readiness":
                 raise ValueError("report input is not a readiness report")
-            Path(args.output).write_text(render_readiness_markdown(report), encoding="utf-8")
+            output = Path(args.output)
+            if output.suffix.lower() == ".html":
+                output.write_text(render_readiness_html(report), encoding="utf-8")
+                print(f"html={output}")
+                return 0
+            output.write_text(render_readiness_markdown(report), encoding="utf-8")
             print(f"markdown={args.output}")
             return 0
         if args.command == "list":
