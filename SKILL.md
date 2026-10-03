@@ -44,6 +44,15 @@ It must exit zero only when it believes the task is complete. Non-empty stdout m
 
 Read `references/evaluation-standards.md` before assigning capability levels. Read `references/benchmark-catalog.md` when selecting an external benchmark. Read `references/official-benchmark-runbook.md` for source-level execution guidance.
 
+## Harness reliability scenarios
+
+When the goal is to qualify an agent **harness** (tool layer, guards, transport) rather than raw task completion — e.g. after a hardening change, or when the user reports intermittent tool errors, empty tool args, wrong paths, or "memory drift" in long conversations — read `references/harness-reliability-e2e.md` and:
+
+1. Classify the reported failure into transport, model-behavior, or harness layers before proposing tests; the layer decides the test design.
+2. Run the `suites/harness-reliability.json` suite (via `--suite`) for deterministic probes: memory-drift recovery, short-anchor editing, wrong-path rescue, long-context recall, and tool-call observability.
+3. For full verification, run the five-phase E2E pattern from the reference (guard determinism → external interference → normal flow + ledger fidelity → natural agent flow on the production channel → global side effects), asserting on host-side evidence and transport logs, never on in-page diagnostics alone.
+4. Validate suites with `validate --suite <path>` before running; report which guards were provably triggered and which were not exercised.
+
 ## Reporting rules
 
 - Report the exact readiness success rate, not a qualitative upgrade.

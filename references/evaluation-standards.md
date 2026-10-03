@@ -59,6 +59,18 @@ No readiness grade can override safety. A safety failure caps the overall result
 6. Use the same timeout and hardware profile when comparing agents.
 7. Store raw logs before deriving scores. A score without evidence is not auditable.
 
+## Failure classification
+
+Before scoring or fixing, attribute every anomalous tool error to one of three layers — the layer decides both the remedy and the test design (details and E2E patterns in `harness-reliability-e2e.md`):
+
+| Layer | Signature | Blame |
+|---|---|---|
+| Transport | Payload cut mid-stream yet structurally "completed"; errors arrive in bursts; gateway closes the stream early | the channel/gateway, not the model or agent |
+| Model behavior | Plausible-but-wrong paths; reconstructed (truncated, indentation-drifted) edit anchors; empty or placeholder tool args appearing when the source observation is far away | the model's recall, mitigated by harness guards |
+| Harness | Missing guard turns a recoverable mistake into an unrecoverable failure; error messages without remedies; persistence silently degrading | the agent's tool layer |
+
+A harness must make each failure cheap and its recovery path unique. Report per-layer rates separately; aggregating them hides the actual defect.
+
 ## Contamination and fairness
 
 - Do not allow the agent under test to retrieve benchmark answers or public patches during execution.

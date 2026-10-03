@@ -58,6 +58,12 @@ def build_parser() -> argparse.ArgumentParser:
     list_parser = subparsers.add_parser("list", help="List registered official benchmarks")
 
     validate_parser = subparsers.add_parser("validate", help="Validate registry and suite schema")
+    validate_parser.add_argument(
+        "--suite",
+        action="append",
+        default=[],
+        help="Additional suite JSON path(s) to validate (absolute, or relative to the repository root)",
+    )
 
     return parser
 
@@ -132,7 +138,12 @@ def main(argv: list[str] | None = None) -> int:
                 registry = json.load(handle)
             benchmark_ids = {item["id"] for item in registry["benchmarks"]}
             print(f"OK registry: {len(benchmark_ids)} benchmarks")
-            _validate_suite(root / "suites" / "readiness.json")
+            suite_paths = [root / "suites" / "readiness.json"]
+            for extra in args.suite:
+                extra_path = Path(extra)
+                suite_paths.append(extra_path if extra_path.is_absolute() else root / extra_path)
+            for suite_path in suite_paths:
+                _validate_suite(suite_path)
             return 0
     except (ValueError, EvaluatorError, json.JSONDecodeError, OSError) as exc:
         print(f"error: {exc}", file=sys.stderr)

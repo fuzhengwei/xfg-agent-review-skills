@@ -224,6 +224,20 @@ python3 scripts/agent_review.py run \
 - `command`：在任务工作区执行命令，退出码 0 表示通过。
 - `both`：同时执行文件和命令校验。
 
+### Harness Reliability Suite
+
+`suites/harness-reliability.json` 内置 5 个针对 **agent harness 可靠性**（工具层、守卫、传输）的确定性任务，用于长对话加固、间歇性工具报错、路径漂移等场景的回归：
+
+| 任务 | 测点 |
+|---|---|
+| `stale-quote-recovery` | 交给 agent 的引用内容与实际文件不符时，能否先验证再改（记忆漂移恢复） |
+| `short-anchor-multi-edit` | 多处小修改能否用最短唯一锚点完成且不破坏其他行（锚点纪律） |
+| `wrong-path-rescue` | prompt 给出拼错路径时，能否定位真实文件而不伪造目录（路径救援） |
+| `long-context-recall` | 读过 5 个文件后再改第 1 个，能否精确召回远端上下文（长上下文漂移） |
+| `tool-trace-evidence` | 是否保留可审计的工具调用轨迹（可观测性） |
+
+方法论（失败三层分类、生产通道压测、五阶段 E2E、传输层日志取证、已知陷阱清单）见 [`references/harness-reliability-e2e.md`](references/harness-reliability-e2e.md)。自定义 suite 可用 `python3 scripts/agent_review.py validate --suite <path>` 预校验。
+
 ## 官方基准
 
 Registry 目前登记 12 个外部基准：

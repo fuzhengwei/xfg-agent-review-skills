@@ -60,8 +60,8 @@ def run_readiness(
 ) -> dict[str, Any]:
     model_profile = resolve_model_profile(model_config_path, model_profile_id)
     suite = load_json(suite_path)
-    if suite.get("suite") != "readiness":
-        raise ValueError("suite file must use suite=readiness")
+    if not isinstance(suite.get("suite"), str) or not suite["suite"].strip():
+        raise ValueError("suite file must declare a non-empty 'suite' name")
     tasks = suite.get("tasks")
     if not isinstance(tasks, list) or not tasks:
         raise ValueError("suite must contain at least one task")

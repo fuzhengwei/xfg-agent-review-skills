@@ -1,0 +1,70 @@
+{
+  "suite": "harness-reliability",
+  "version": 1,
+  "timeout_seconds": 600,
+  "description": "Probes harness reliability failure modes from real hardening cycles: memory-drift recovery, short-anchor editing, wrong-path rescue, long-context recall, and tool-call observability. See references/harness-reliability-e2e.md.",
+  "tasks": [
+    {
+      "id": "stale-quote-recovery",
+      "capability": "error-recovery",
+      "prompt": "In pom.xml, change the value inside <finalName>...</finalName> from demo-service to demo-service-v2. A teammate's note claims the current build block is '<build> <finalName>demo-serv</finalName> </build>' with single-space indentation. That note may be inaccurate: trust the actual file content, verify before editing, and keep the rest of the file unchanged.",
+      "setup_files": {
+        "pom.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project xmlns=\"http://maven.apache.org/POM/4.0.0\">\n    <modelVersion>4.0.0</modelVersion>\n    <groupId>com.demo</groupId>\n    <artifactId>demo-service</artifactId>\n    <version>1.0.0</version>\n    <build>\n        <finalName>demo-service</finalName>\n        <plugins>\n            <plugin>\n                <groupId>org.apache.maven.plugins</groupId>\n                <artifactId>maven-compiler-plugin</artifactId>\n            </plugin>\n        </plugins>\n    </build>\n</project>\n"
+      },
+      "validator": {
+        "type": "command",
+        "command": ["sh", "-c", "grep -q '<finalName>demo-service-v2</finalName>' pom.xml && ! grep -q '<finalName>demo-serv<' pom.xml && grep -q 'maven-compiler-plugin' pom.xml && grep -q '    <finalName>' pom.xml"]
+      }
+    },
+    {
+      "id": "short-anchor-multi-edit",
+      "capability": "multi-step-tool-use",
+      "prompt": "In app.conf make exactly three changes: timeout=30 becomes timeout=60, retries=3 becomes retries=5, and feature_x=off becomes feature_x=on. Every other line must stay byte-identical, and no line may be duplicated or deleted. Prefer minimal unique anchors over quoting large blocks.",
+      "setup_files": {
+        "app.conf": "# runtime configuration\ntimeout=30\nretries=3\nfeature_x=off\nfeature_y=on\nendpoint=https://api.example.com\nworkers=4\nlog_level=info\ncache_size=256\nflush_interval=5\nmax_upload_mb=64\n"
+      },
+      "validator": {
+        "type": "command",
+        "command": ["sh", "-c", "grep -qx 'timeout=60' app.conf && grep -qx 'retries=5' app.conf && grep -qx 'feature_x=on' app.conf && grep -qx 'feature_y=on' app.conf && grep -qx 'workers=4' app.conf && grep -qx 'log_level=info' app.conf && test \"$(wc -l < app.conf)\" -eq 11"]
+      }
+    },
+    {
+      "id": "wrong-path-rescue",
+      "capability": "tool-selection",
+      "prompt": "Update the service greeting in src/servcies/payment.py (as written; the path may need locating) so the string 'Hello v1' becomes 'Hello v2'. Do not create new directories or files to force the path to exist — find where the file actually is.",
+      "setup_files": {
+        "src/services/payment.py": "def greeting():\n    return \"Hello v1\"\n\ndef charge(amount):\n    return amount * 100\n"
+      },
+      "validator": {
+        "type": "command",
+        "command": ["sh", "-c", "grep -q 'Hello v2' src/services/payment.py && ! grep -q 'Hello v1' src/services/payment.py && grep -q 'charge' src/services/payment.py && test ! -e src/servcies"]
+      }
+    },
+    {
+      "id": "long-context-recall",
+      "capability": "multi-step-state",
+      "prompt": "First read all five files in config/. Only after reading every one of them, edit config/db.properties so its pool_size value equals the pool_size value used in config/cache.properties. Every other line in db.properties must stay unchanged.",
+      "setup_files": {
+        "config/db.properties": "host=localhost\nport=5432\npool_size=8\ntimeout=30\nssl=off\n",
+        "config/cache.properties": "backend=redis\npool_size=32\nttl=300\nmax_keys=10000\n",
+        "config/mq.properties": "broker=tcp://127.0.0.1:61616\npool_size=16\nack=auto\n",
+        "config/log.properties": "level=info\nrotate=weekly\nretain=8\n",
+        "config/security.properties": "auth=oauth2\nrealm=internal\nmax_attempts=5\n"
+      },
+      "validator": {
+        "type": "command",
+        "command": ["sh", "-c", "grep -qx 'pool_size=32' config/db.properties && grep -qx 'host=localhost' config/db.properties && grep -qx 'port=5432' config/db.properties && grep -qx 'ssl=off' config/db.properties && test \"$(wc -l < config/db.properties)\" -eq 5"]
+      }
+    },
+    {
+      "id": "tool-trace-evidence",
+      "capability": "protocol",
+      "prompt": "While completing this task, maintain a file named tool-trace.json in the workspace: a JSON array where every tool or action invocation you make is one object with the fields name (string), args (object), and ok (boolean). The task itself: create greeting.txt containing exactly the text HELLO-TRACE. tool-trace.json must contain at least 3 entries and be valid JSON.",
+      "setup_files": {},
+      "validator": {
+        "type": "command",
+        "command": ["python3", "-c", "import json,sys; trace=json.load(open('tool-trace.json')); assert isinstance(trace,list) and len(trace)>=3; assert all(set(('name','args','ok'))<=set(e) for e in trace); assert open('greeting.txt').read().strip()=='HELLO-TRACE'"]
+      }
+    }
+  ]
+}
